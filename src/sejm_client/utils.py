@@ -4,23 +4,30 @@ from collections.abc import Callable, Generator
 from datetime import date, timedelta
 from typing import Any, TypeVar
 
+import httpx
+
 T = TypeVar("T")
 
 _SEJM_API_BASE = "https://api.sejm.gov.pl/sejm"
 
 
 def current_term() -> int:
-    import httpx
-
     resp = httpx.get(f"{_SEJM_API_BASE}/term", headers={"Accept": "application/json"}, timeout=15)
     resp.raise_for_status()
     terms = resp.json()
-    # Find current (active) term — no 'till' date or till > today
+    current = [t for t in terms if t.get("current") is True]
+    if current:
+        return max(current, key=lambda t: t["num"])["num"]
+
+    # Fallback for older payloads that expose the end date as `to`/`till`.
     today = date.today().isoformat()
-    current = [t for t in terms if not t.get("till") or t["till"] >= today]
-    if not current:
-        return terms[-1]["num"]
-    return max(current, key=lambda t: t["num"])["num"]
+    active = [
+        t for t in terms
+        if not t.get("to", t.get("till")) or t.get("to", t.get("till")) >= today
+    ]
+    if active:
+        return max(active, key=lambda t: t["num"])["num"]
+    return terms[-1]["num"]
 
 
 def date_range_last_n_days(days: int) -> tuple[date, date]:

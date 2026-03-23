@@ -162,7 +162,7 @@ class SejmClient:
 
     def get_votings_for_bill(self, print_num: str) -> list[Voting]:
         """Best-effort: finds votings whose title references the given print number."""
-        process = self.get_process(print_num)
+        self.get_process(print_num)
         results: list[Voting] = []
         for proceeding in self.get_proceedings():
             sitting_num = proceeding.number
@@ -197,6 +197,9 @@ class SejmClient:
             items = data.get("items", data)
         else:
             items = data
+        # The upstream prints endpoint currently ignores `limit` and `offset`.
+        if isinstance(items, list):
+            items = items[offset:offset + limit]
         return [Print.model_validate(item) for item in items]
 
     def get_print(self, print_num: str) -> Print:

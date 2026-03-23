@@ -39,10 +39,37 @@ class EliClient:
             "limit": limit,
             "offset": offset,
         }
-        path = f"/acts/{publisher}/{year}" if year else f"/acts/{publisher}"
-        data = self._http.get(path, params)
-        items = data.get("items", data) if isinstance(data, dict) else data
-        return [Act.model_validate(item) for item in items]
+        if year is not None:
+            data = self._http.get(f"/acts/{publisher}/{year}", params)
+            items = self._extract_items(data)
+            if self._pagination_ignored(data, items, limit, offset):
+                items = items[offset:offset + limit]
+            return [Act.model_validate(item) for item in items]
+
+        publisher_data = self._http.get(f"/acts/{publisher}")
+        years = publisher_data.get("years") if isinstance(publisher_data, dict) else None
+        if not isinstance(years, list):
+            raise ValueError(f"Publisher listing for {publisher!r} does not include yearly act indexes")
+
+        page_params = {k: v for k, v in params.items() if k not in {"limit", "offset"}}
+        remaining_offset = offset
+        collected: list[dict[str, Any]] = []
+
+        # The API only exposes act listings per year, so synthesize publisher-wide
+        # iteration starting from the newest year.
+        for indexed_year in reversed(years):
+            year_data = self._http.get(f"/acts/{publisher}/{indexed_year}", page_params)
+            year_items = self._extract_items(year_data)
+            if remaining_offset >= len(year_items):
+                remaining_offset -= len(year_items)
+                continue
+            year_items = year_items[remaining_offset:]
+            remaining_offset = 0
+            collected.extend(year_items)
+            if len(collected) >= limit:
+                break
+
+        return [Act.model_validate(item) for item in collected[:limit]]
 
     def get_recent_acts(self, days: int = 30, publisher: str = "DU") -> list[Act]:
         from .utils import date_range_last_n_days
@@ -75,6 +102,23 @@ class EliClient:
             return [Publisher.model_validate(item) for item in data]
         items = data.get("items", [])
         return [Publisher.model_validate(item) for item in items]
+
+    @staticmethod
+    def _extract_items(data: Any) -> list[dict[str, Any]]:
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict) and isinstance(data.get("items"), list):
+            return data["items"]
+        raise ValueError("Expected a list response or an object with an 'items' list")
+
+    @staticmethod
+    def _pagination_ignored(data: Any, items: list[dict[str, Any]], limit: int, offset: int) -> bool:
+        if not isinstance(data, dict):
+            return False
+        response_offset = data.get("offset")
+        if isinstance(response_offset, int) and response_offset != offset:
+            return True
+        return len(items) > limit
 
     def close(self) -> None:
         self._http.close()
