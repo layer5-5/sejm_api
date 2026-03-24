@@ -5,8 +5,8 @@ from typing import Any
 
 from .http import HttpClient
 from .models.bills import Bill
-from .models.common import ApplicantType, BillStatus, BillType
-from .models.mps import Club, MP
+from .models.common import ApplicantType, BillStatus, BillType, EliPublisher
+from .models.mps import MP, Club
 from .models.prints import Print
 from .models.processes import Process
 from .models.votings import Voting
@@ -73,7 +73,11 @@ class SejmClient:
             "dateOfReceiptTo": date_to.isoformat() if date_to else None,
             "title": title,
             "euRelated": str(eu_related).lower() if eu_related is not None else None,
-            "publicConsultation": str(public_consultation).lower() if public_consultation is not None else None,
+            "publicConsultation": (
+                str(public_consultation).lower()
+                if public_consultation is not None
+                else None
+            ),
             "sort": sort,
             "limit": limit,
             "offset": offset,
@@ -111,6 +115,7 @@ class SejmClient:
         sort: str | None = None,
         limit: int = 50,
         offset: int = 0,
+        publisher: EliPublisher | None = None,
     ) -> list[Process]:
         params: dict[str, Any] = {
             "dateFrom": date_from.isoformat() if date_from else None,
@@ -124,7 +129,11 @@ class SejmClient:
             items = data.get("items", data)
         else:
             items = data
-        return [Process.model_validate(item) for item in items]
+        processes = [Process.model_validate(item) for item in items]
+        if publisher is not None:
+            prefix = publisher.value + "/"
+            processes = [p for p in processes if p.eli and p.eli.startswith(prefix)]
+        return processes
 
     def get_process(self, print_num: str) -> Process:
         data = self._http.get(f"/term{self.term}/processes/{print_num}")

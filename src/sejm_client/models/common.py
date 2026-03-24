@@ -45,6 +45,12 @@ class ActStatus(str, Enum):
     NO_STATUS = "bez statusu"
 
 
+class EliPublisher(str, Enum):
+    """ELI publisher codes for the two official Polish gazette series."""
+    DU = "DU"   # Dziennik Ustaw — statutes, regulations, decrees
+    MP = "MP"   # Monitor Polski — government announcements, appointments
+
+
 class VotingResult(str, Enum):
     YES = "YES"
     NO = "NO"

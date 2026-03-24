@@ -1,6 +1,7 @@
 from .client import SejmClient
 from .eli_client import EliClient
 from .models import (
+    MP,
     Act,
     ActStatus,
     ApplicantType,
@@ -9,7 +10,7 @@ from .models import (
     BillType,
     Club,
     Committee,
-    MP,
+    EliPublisher,
     Print,
     Process,
     ProcessDocument,
@@ -32,6 +33,7 @@ __all__ = [
     "BillType",
     "Club",
     "Committee",
+    "EliPublisher",
     "MP",
     "Print",
     "Process",
