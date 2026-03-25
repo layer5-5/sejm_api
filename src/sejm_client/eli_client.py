@@ -47,9 +47,14 @@ class EliClient:
             return [Act.model_validate(item) for item in items]
 
         publisher_data = self._http.get(f"/acts/{publisher}")
-        years = publisher_data.get("years") if isinstance(publisher_data, dict) else None
+        years = (
+            publisher_data.get("years") if isinstance(publisher_data, dict) else None
+        )
         if not isinstance(years, list):
-            raise ValueError(f"Publisher listing for {publisher!r} does not include yearly act indexes")
+            raise ValueError(
+                f"Publisher listing for {publisher!r} does not include"
+                " yearly act indexes"
+            )
 
         page_params = {k: v for k, v in params.items() if k not in {"limit", "offset"}}
         remaining_offset = offset
@@ -84,14 +89,18 @@ class EliClient:
         # eli format: "DU/2024/179"
         parts = eli.split("/")
         if len(parts) != 3:
-            raise ValueError(f"Invalid ELI format: {eli!r}. Expected 'PUBLISHER/YEAR/POS'")
+            raise ValueError(
+                f"Invalid ELI format: {eli!r}. Expected 'PUBLISHER/YEAR/POS'"
+            )
         publisher, year, pos = parts
         return self.get_act(publisher, int(year), int(pos))
 
     def get_act_text_url(self, eli: str, fmt: str = "pdf") -> str:
         parts = eli.split("/")
         if len(parts) != 3:
-            raise ValueError(f"Invalid ELI format: {eli!r}. Expected 'PUBLISHER/YEAR/POS'")
+            raise ValueError(
+                f"Invalid ELI format: {eli!r}. Expected 'PUBLISHER/YEAR/POS'"
+            )
         publisher, year, pos = parts
         ext = "PDF" if fmt.lower() == "pdf" else "HTML"
         return f"{_ELI_BASE}/acts/{publisher}/{year}/{pos}/text/{ext}"
@@ -112,7 +121,9 @@ class EliClient:
         raise ValueError("Expected a list response or an object with an 'items' list")
 
     @staticmethod
-    def _pagination_ignored(data: Any, items: list[dict[str, Any]], limit: int, offset: int) -> bool:
+    def _pagination_ignored(
+        data: Any, items: list[dict[str, Any]], limit: int, offset: int
+    ) -> bool:
         if not isinstance(data, dict):
             return False
         response_offset = data.get("offset")

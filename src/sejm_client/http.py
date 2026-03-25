@@ -3,7 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 import httpx
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from .exceptions import NotFoundError, RateLimitError, SejmApiError
 
@@ -44,7 +49,8 @@ class HttpClient:
     def get(self, path: str, params: dict[str, Any] | None = None) -> Any:
         # Strip leading slash so httpx appends to base_url rather than replacing path
         clean_path = path.lstrip("/")
-        response = self._client.get(clean_path, params={k: v for k, v in (params or {}).items() if v is not None})
+        filtered = {k: v for k, v in (params or {}).items() if v is not None}
+        response = self._client.get(clean_path, params=filtered)
         _raise_for_status(response)
         return response.json()
 

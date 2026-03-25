@@ -45,5 +45,9 @@ class Process(BaseModel):
     rcl_link: Optional[str] = Field(None, alias="rclLink")
     eu_status: Optional[str] = Field(None, alias="UE")
     legislative_committee: Optional[bool] = Field(None, alias="legislativeCommittee")
-    other_documents: list[ProcessDocument] = Field(default_factory=list, alias="otherDocuments")
-    prints_considered_jointly: list[str] = Field(default_factory=list, alias="printsConsideredJointly")
+    other_documents: list[ProcessDocument] = Field(
+        default_factory=list, alias="otherDocuments"
+    )
+    prints_considered_jointly: list[str] = Field(
+        default_factory=list, alias="printsConsideredJointly"
+    )

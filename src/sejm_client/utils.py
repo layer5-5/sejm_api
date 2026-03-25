@@ -12,7 +12,9 @@ _SEJM_API_BASE = "https://api.sejm.gov.pl/sejm"
 
 
 def current_term() -> int:
-    resp = httpx.get(f"{_SEJM_API_BASE}/term", headers={"Accept": "application/json"}, timeout=15)
+    resp = httpx.get(
+        f"{_SEJM_API_BASE}/term", headers={"Accept": "application/json"}, timeout=15
+    )
     resp.raise_for_status()
     terms = resp.json()
     current = [t for t in terms if t.get("current") is True]
